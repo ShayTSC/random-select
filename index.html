@@ -2,17 +2,116 @@
 <html lang="zh" class="bg-gray-100">
   <head>
     <meta charset="UTF-8" />
-    <title>🎲 随机选项选择器</title>
+    <title>🎰 随机滚动选择器</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/alpinejs" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <style>
+      [x-cloak] { display: none !important; }
+
+      .slot-machine {
+        perspective: 1000px;
+        transform-style: preserve-3d;
+        height: 3rem;
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+      }
+
+      .slot-window {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 100%;
+        background: linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(255, 255, 255, 0.9) 15%,
+          rgba(255, 255, 255, 0.8) 30%,
+          rgba(255, 255, 255, 0.8) 70%,
+          rgba(255, 255, 255, 0.9) 85%,
+          rgba(255, 255, 255, 1) 100%
+        );
+        z-index: 2;
+        pointer-events: none;
+        border-radius: 0.5rem;
+      }
+
+      .slot-container {
+        position: absolute;
+        width: 100%;
+        left: 0;
+        top: 0;
+      }
+
+      .slot-item {
+        height: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #d97706;
+        backface-visibility: hidden;
+        text-align: center;
+        padding: 0 1rem;
+      }
+
+      @keyframes glow {
+        0%, 100% { text-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
+        50% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+      }
+
+      .glow-effect {
+        animation: glow 1.5s ease-in-out infinite;
+      }
+
+      .options-wrapper {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+      }
+
+      .options-list {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        opacity: 1;
+        transform-origin: top;
+        transform: translateY(0);
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+      }
+
+      .options-list.empty {
+        opacity: 0;
+        transform: translateY(-10px);
+        padding: 0;
+      }
+
+      .option-item {
+        transform-origin: top;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 0.25rem 0;
+      }
+
+      .option-enter {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      .option-leave {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+    </style>
   </head>
   <body class="min-h-screen flex items-center justify-center">
     <div
-      x-data="randomPicker()"
+      x-data="lotteryPicker()"
       class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md space-y-4"
+      x-init="$watch('options', value => handleOptionsChange(value))"
     >
       <h1 class="text-2xl font-bold text-center text-blue-600">
-        🎲 随机选项选择器
+        🎰 抽奖随机选择器
       </h1>
 
       <div class="flex space-x-2">
@@ -25,78 +124,209 @@
         />
         <button
           @click="addOption"
-          class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+          class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors duration-200"
         >
           添加
         </button>
       </div>
 
-      <ul class="list-disc pl-5 space-y-1 max-h-40 overflow-y-auto">
-        <template x-for="(option, index) in options" :key="index">
-          <li class="flex justify-between items-center">
-            <span x-text="option"></span>
-            <button
-              @click="removeOption(index)"
-              class="text-red-500 hover:text-red-700 text-sm"
+      <div 
+        class="options-wrapper"
+        :style="{ maxHeight: options.length ? (options.length * 2.5 + 1) + 'rem' : '0' }"
+      >
+        <ul
+          class="options-list list-disc pl-5 space-y-1"
+          :class="{ 'empty': options.length === 0 }"
+        >
+          <template x-for="(option, index) in options" :key="option + index">
+            <li
+              class="option-item flex justify-between items-center"
+              :id="'option-' + index"
             >
-              ✕
-            </button>
-          </li>
-        </template>
-      </ul>
+              <span x-text="option" class="text-gray-700"></span>
+              <button
+                @click="removeOption(index)"
+                class="text-red-500 hover:text-red-700 text-sm transition-colors duration-200"
+              >
+                ✕
+              </button>
+            </li>
+          </template>
+        </ul>
+      </div>
 
       <div class="flex justify-between">
         <button
           @click="clearOptions"
-          class="text-sm text-gray-500 hover:text-red-500"
+          class="text-sm text-gray-500 hover:text-red-500 transition-colors duration-200"
         >
           清空全部
         </button>
         <button
-          @click="pickRandom"
-          class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg"
+          @click="startRolling"
+          class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+          :disabled="rolling"
         >
-          随机选择
+          <span x-show="!rolling">随机选择</span>
+          <span x-show="rolling">滚动中...</span>
         </button>
       </div>
 
-      <template x-if="result">
-        <div class="text-center mt-4 text-xl font-semibold text-purple-600">
-          🎉 结果是：<span x-text="result"></span>
+      <div class="text-center mt-6 h-12 relative">
+        <div 
+          class="slot-machine absolute inset-0"
+          :class="{ 'opacity-0': !rolling }"
+          style="transition: opacity 0.3s ease-in-out;"
+        >
+          <div class="slot-window"></div>
+          <div x-ref="slotContainer" class="slot-container">
+            <template x-for="(option, index) in displayOptions" :key="index + '-display'">
+              <div class="slot-item" x-text="option"></div>
+            </template>
+          </div>
         </div>
-      </template>
+        <div 
+          class="absolute inset-0 flex items-center justify-center"
+          :class="{ 'opacity-0': rolling }"
+          style="transition: opacity 0.3s ease-in-out;"
+        >
+          <template x-if="result">
+            <div class="text-xl font-semibold text-purple-600 glow-effect">
+              🎉 结果是：<span x-text="result"></span>
+            </div>
+          </template>
+          <template x-if="!result && options.length === 0">
+            <div class="text-gray-500">
+              请添加选项并开始
+            </div>
+          </template>
+        </div>
+      </div>
     </div>
 
     <script>
-      function randomPicker() {
+      function lotteryPicker() {
         return {
           newOption: "",
           options: [],
           result: "",
+          rolling: false,
+          displayOptions: [],
+          itemHeight: 40,
+          slotTween: null,
+
+          handleOptionsChange(newOptions) {
+            this.$nextTick(() => {
+              const items = document.querySelectorAll('.option-item');
+              items.forEach((item, index) => {
+                if (item.classList.contains('option-enter')) {
+                  item.classList.remove('option-enter');
+                }
+              });
+
+              if (newOptions.length > this.options.length - 1) {
+                const lastItem = items[items.length - 1];
+                if (lastItem) {
+                  lastItem.classList.add('option-enter');
+                  setTimeout(() => lastItem.classList.remove('option-enter'), 10);
+                }
+              }
+            });
+          },
+
           addOption() {
             const value = this.newOption.trim();
             if (value) {
-              this.options.push(value);
-              this.newOption = "";
-              this.result = "";
+              this.$nextTick(() => {
+                this.options = [...this.options, value];
+                this.newOption = "";
+                this.result = "";
+              });
             }
           },
+
           removeOption(index) {
-            this.options.splice(index, 1);
-            this.result = "";
+            const itemToRemove = document.getElementById('option-' + index);
+            if (itemToRemove) {
+              itemToRemove.classList.add('option-leave');
+              setTimeout(() => {
+                this.options = this.options.filter((_, i) => i !== index);
+                this.result = "";
+              }, 300);
+            }
           },
+
           clearOptions() {
-            this.options = [];
-            this.result = "";
+            const items = document.querySelectorAll('.option-item');
+            items.forEach(item => item.classList.add('option-leave'));
+            setTimeout(() => {
+              this.options = [];
+              this.result = "";
+            }, 300);
           },
-          pickRandom() {
-            if (this.options.length === 0) {
-              this.result = "请先添加一些选项！";
+
+          startRolling() {
+            if (this.options.length < 2) {
+              this.result = this.options.length === 1 ? this.options[0] : "请至少添加两个选项！";
               return;
             }
-            const index = Math.floor(Math.random() * this.options.length);
-            this.result = this.options[index];
-          },
+            if (this.rolling) return;
+
+            this.result = "";
+            this.rolling = true;
+
+            if (this.slotTween) {
+              this.slotTween.kill();
+            }
+
+            const baseRepeats = 5;
+            const neededItems = (baseRepeats + 2) * this.options.length;
+            this.displayOptions = [];
+            while (this.displayOptions.length < neededItems) {
+              this.displayOptions.push(...this.options);
+            }
+
+            const bufferItems = this.options.slice(-Math.ceil(this.options.length / 2));
+            this.displayOptions.unshift(...bufferItems);
+            
+            const endBufferItems = this.options.slice(0, Math.ceil(this.options.length / 2));
+            this.displayOptions.push(...endBufferItems);
+
+            const finalOptionIndex = Math.floor(Math.random() * this.options.length);
+            const targetIndex = bufferItems.length + (baseRepeats * this.options.length) + finalOptionIndex;
+            const targetY = -targetIndex * this.itemHeight + (this.itemHeight / 2);
+
+            this.$nextTick(() => {
+              if (!this.$refs.slotContainer) return;
+
+              gsap.set(this.$refs.slotContainer, { y: 0 });
+
+              const tl = gsap.timeline({
+                onComplete: () => {
+                  this.rolling = false;
+                  this.result = this.options[finalOptionIndex];
+                }
+              });
+
+              tl.to(this.$refs.slotContainer, {
+                y: targetY * 0.2,
+                duration: 0.5,
+                ease: "power2.in"
+              })
+              .to(this.$refs.slotContainer, {
+                y: targetY * 0.8,
+                duration: 1.5,
+                ease: "none"
+              })
+              .to(this.$refs.slotContainer, {
+                y: targetY,
+                duration: 1,
+                ease: "power2.out"
+              });
+
+              this.slotTween = tl;
+            });
+          }
         };
       }
     </script>
