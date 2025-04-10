@@ -1,84 +1,104 @@
 <!DOCTYPE html>
-<html lang="zh">
-<head>
-  <meta charset="UTF-8">
-  <title>随机选项选择器</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 2em;
-      background-color: #f4f4f4;
-      max-width: 600px;
-      margin: auto;
-    }
-    input, button {
-      padding: 0.6em;
-      font-size: 1em;
-      margin-top: 1em;
-    }
-    #optionsList {
-      margin-top: 1em;
-      padding-left: 1em;
-    }
-    .option-item {
-      margin: 0.3em 0;
-    }
-    #result {
-      font-size: 1.5em;
-      margin-top: 1em;
-      color: #0077cc;
-      font-weight: bold;
-    }
-  </style>
-</head>
-<body>
+<html lang="zh" class="bg-gray-100">
+  <head>
+    <meta charset="UTF-8" />
+    <title>🎲 随机选项选择器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs" defer></script>
+  </head>
+  <body class="min-h-screen flex items-center justify-center">
+    <div
+      x-data="randomPicker()"
+      class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md space-y-4"
+    >
+      <h1 class="text-2xl font-bold text-center text-blue-600">
+        🎲 随机选项选择器
+      </h1>
 
-  <h1>🎲 随机选项选择器</h1>
+      <div class="flex space-x-2">
+        <input
+          x-model="newOption"
+          @keydown.enter="addOption"
+          type="text"
+          placeholder="输入一个选项"
+          class="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+        <button
+          @click="addOption"
+          class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+        >
+          添加
+        </button>
+      </div>
 
-  <input type="text" id="optionInput" placeholder="输入一个选项">
-  <button onclick="addOption()">添加选项</button>
+      <ul class="list-disc pl-5 space-y-1 max-h-40 overflow-y-auto">
+        <template x-for="(option, index) in options" :key="index">
+          <li class="flex justify-between items-center">
+            <span x-text="option"></span>
+            <button
+              @click="removeOption(index)"
+              class="text-red-500 hover:text-red-700 text-sm"
+            >
+              ✕
+            </button>
+          </li>
+        </template>
+      </ul>
 
-  <ul id="optionsList"></ul>
+      <div class="flex justify-between">
+        <button
+          @click="clearOptions"
+          class="text-sm text-gray-500 hover:text-red-500"
+        >
+          清空全部
+        </button>
+        <button
+          @click="pickRandom"
+          class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg"
+        >
+          随机选择
+        </button>
+      </div>
 
-  <button onclick="pickRandomOption()">随机选择</button>
+      <template x-if="result">
+        <div class="text-center mt-4 text-xl font-semibold text-purple-600">
+          🎉 结果是：<span x-text="result"></span>
+        </div>
+      </template>
+    </div>
 
-  <div id="result"></div>
-
-  <script>
-    const options = [];
-
-    function addOption() {
-      const input = document.getElementById("optionInput");
-      const value = input.value.trim();
-      if (value) {
-        options.push(value);
-        updateOptionsList();
-        input.value = "";
+    <script>
+      function randomPicker() {
+        return {
+          newOption: "",
+          options: [],
+          result: "",
+          addOption() {
+            const value = this.newOption.trim();
+            if (value) {
+              this.options.push(value);
+              this.newOption = "";
+              this.result = "";
+            }
+          },
+          removeOption(index) {
+            this.options.splice(index, 1);
+            this.result = "";
+          },
+          clearOptions() {
+            this.options = [];
+            this.result = "";
+          },
+          pickRandom() {
+            if (this.options.length === 0) {
+              this.result = "请先添加一些选项！";
+              return;
+            }
+            const index = Math.floor(Math.random() * this.options.length);
+            this.result = this.options[index];
+          },
+        };
       }
-    }
-
-    function updateOptionsList() {
-      const list = document.getElementById("optionsList");
-      list.innerHTML = "";
-      options.forEach((opt, index) => {
-        const li = document.createElement("li");
-        li.textContent = opt;
-        li.className = "option-item";
-        list.appendChild(li);
-      });
-    }
-
-    function pickRandomOption() {
-      if (options.length === 0) {
-        document.getElementById("result").textContent = "请先添加一些选项！";
-        return;
-      }
-      const randomIndex = Math.floor(Math.random() * options.length);
-      const chosen = options[randomIndex];
-      document.getElementById("result").textContent = `🎉 结果是：${chosen}`;
-    }
-  </script>
-
-</body>
+    </script>
+  </body>
 </html>
-
