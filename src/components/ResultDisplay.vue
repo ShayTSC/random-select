@@ -29,7 +29,7 @@
         <div
           v-if="result && !rolling"
           :key="result"
-          class="text-center animate-bounce-in"
+          class="text-center"
         >
           <div class="text-xl xs:text-2xl font-bold text-purple-600 animate-glow mb-2">
             🎉 结果是：{{ result }}
