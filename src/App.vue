@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center safe-area-inset">
-    <div class="w-full max-w-md mx-4">
+  <div class="min-h-screen flex items-start xs:items-center justify-center safe-area-inset py-3 xs:py-4">
+    <div class="w-full max-w-md mx-1 xs:mx-4">
       <!-- Main Card -->
-      <div class="card p-6 space-y-6">
+      <div class="card p-4 xs:p-6 space-y-4 xs:space-y-6">
         <!-- Header -->
         <header class="text-center">
           <h1 class="text-2xl xs:text-3xl font-bold text-primary-600 mb-2">
@@ -72,7 +72,7 @@
       </div>
       
       <!-- Footer -->
-      <footer class="text-center mt-6 text-gray-500 text-xs">
+      <footer class="text-center mt-6 xs:mt-8 text-gray-500 text-xs">
         <p>轻触屏幕，体验更佳 ✨</p>
       </footer>
     </div>

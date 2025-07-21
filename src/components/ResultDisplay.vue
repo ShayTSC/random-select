@@ -1,5 +1,5 @@
 <template>
-  <div class="text-center mt-6 h-16 relative">
+  <div class="text-center mt-4 xs:mt-6 h-16 relative">
     <!-- Slot Machine Display -->
     <div 
       class="slot-machine absolute inset-0"
@@ -36,10 +36,13 @@
           </div>
           <button
             @click="shareResult"
-            class="text-sm text-gray-500 hover:text-primary-500 transition-colors"
+            class="inline-flex items-center gap-1.5 mt-1 xs:mt-2 px-3 py-1.5 text-gray-600 hover:text-primary-600 text-xs font-medium rounded-full border border-gray-200 hover:border-primary-300 bg-white/80 hover:bg-white transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-primary-400"
             v-if="canShare"
           >
-            📱 分享结果
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
+            </svg>
+            <span>分享</span>
           </button>
         </div>
       </Transition>
