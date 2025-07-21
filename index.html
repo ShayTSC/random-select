@@ -1,333 +1,111 @@
 <!DOCTYPE html>
-<html lang="zh" class="bg-gray-100">
+<html lang="zh" class="h-full">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>🎰 随机滚动选择器</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/alpinejs" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <meta name="description" content="简单易用的随机选择器，支持自定义选项和炫酷动画效果" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#3b82f6" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="随机选择器" />
+    
+    <!-- Icons -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Font optimization for mobile -->
     <style>
-      [x-cloak] { display: none !important; }
-
-      .slot-machine {
-        perspective: 1000px;
-        transform-style: preserve-3d;
-        height: 3rem;
-        overflow: hidden;
-        position: relative;
-        width: 100%;
+      html {
+        font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
-
-      .slot-window {
-        position: absolute;
+      
+      /* Prevent zoom on input focus on iOS */
+      @media screen and (-webkit-min-device-pixel-ratio: 0) {
+        select, textarea, input[type="text"] {
+          font-size: 16px;
+        }
+      }
+      
+      /* Loading screen */
+      #loading {
+        position: fixed;
         top: 0;
         left: 0;
-        right: 0;
+        width: 100%;
         height: 100%;
-        background: linear-gradient(
-          to bottom,
-          rgba(255, 255, 255, 1) 0%,
-          rgba(255, 255, 255, 0.9) 15%,
-          rgba(255, 255, 255, 0.8) 30%,
-          rgba(255, 255, 255, 0.8) 70%,
-          rgba(255, 255, 255, 0.9) 85%,
-          rgba(255, 255, 255, 1) 100%
-        );
-        z-index: 2;
-        pointer-events: none;
-        border-radius: 0.5rem;
-      }
-
-      .slot-container {
-        position: absolute;
-        width: 100%;
-        left: 0;
-        top: 0;
-      }
-
-      .slot-item {
-        height: 2.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #d97706;
-        backface-visibility: hidden;
-        text-align: center;
-        padding: 0 1rem;
-      }
-
-      @keyframes glow {
-        0%, 100% { text-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
-        50% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
-      }
-
-      .glow-effect {
-        animation: glow 1.5s ease-in-out infinite;
-      }
-
-      .options-wrapper {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow: hidden;
-      }
-
-      .options-list {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 9999;
         opacity: 1;
-        transform-origin: top;
-        transform: translateY(0);
-        padding-top: 0.5rem;
-        padding-bottom: 0.5rem;
+        transition: opacity 0.5s ease-out;
       }
-
-      .options-list.empty {
+      
+      #loading.fade-out {
         opacity: 0;
-        transform: translateY(-10px);
-        padding: 0;
+        pointer-events: none;
       }
-
-      .option-item {
-        transform-origin: top;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        padding: 0.25rem 0;
+      
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s ease-in-out infinite;
       }
-
-      .option-enter {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-
-      .option-leave {
-        opacity: 0;
-        transform: translateY(10px);
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
       }
     </style>
   </head>
-  <body class="min-h-screen flex items-center justify-center">
-    <div
-      x-data="lotteryPicker()"
-      class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md space-y-4"
-      x-init="$watch('options', value => handleOptionsChange(value))"
-    >
-      <h1 class="text-2xl font-bold text-center text-blue-600">
-        🎰 抽奖随机选择器
-      </h1>
-
-      <div class="flex space-x-2">
-        <input
-          x-model="newOption"
-          @keydown.enter="addOption"
-          type="text"
-          placeholder="输入一个选项"
-          class="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
-        <button
-          @click="addOption"
-          class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-        >
-          添加
-        </button>
-      </div>
-
-      <div 
-        class="options-wrapper"
-        :style="{ maxHeight: options.length ? (options.length * 2.5 + 1) + 'rem' : '0' }"
-      >
-        <ul
-          class="options-list list-disc pl-5 space-y-1"
-          :class="{ 'empty': options.length === 0 }"
-        >
-          <template x-for="(option, index) in options" :key="option + index">
-            <li
-              class="option-item flex justify-between items-center"
-              :id="'option-' + index"
-            >
-              <span x-text="option" class="text-gray-700"></span>
-              <button
-                @click="removeOption(index)"
-                class="text-red-500 hover:text-red-700 text-sm transition-colors duration-200"
-              >
-                ✕
-              </button>
-            </li>
-          </template>
-        </ul>
-      </div>
-
-      <div class="flex justify-between">
-        <button
-          @click="clearOptions"
-          class="text-sm text-gray-500 hover:text-red-500 transition-colors duration-200"
-        >
-          清空全部
-        </button>
-        <button
-          @click="startRolling"
-          class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-          :disabled="rolling"
-        >
-          <span x-show="!rolling">随机选择</span>
-          <span x-show="rolling">滚动中...</span>
-        </button>
-      </div>
-
-      <div class="text-center mt-6 h-12 relative">
-        <div 
-          class="slot-machine absolute inset-0"
-          :class="{ 'opacity-0': !rolling }"
-          style="transition: opacity 0.3s ease-in-out;"
-        >
-          <div class="slot-window"></div>
-          <div x-ref="slotContainer" class="slot-container">
-            <template x-for="(option, index) in displayOptions" :key="index + '-display'">
-              <div class="slot-item" x-text="option"></div>
-            </template>
-          </div>
-        </div>
-        <div 
-          class="absolute inset-0 flex items-center justify-center"
-          :class="{ 'opacity-0': rolling }"
-          style="transition: opacity 0.3s ease-in-out;"
-        >
-          <template x-if="result">
-            <div class="text-xl font-semibold text-purple-600 glow-effect">
-              🎉 结果是：<span x-text="result"></span>
-            </div>
-          </template>
-          <template x-if="!result && options.length === 0">
-            <div class="text-gray-500">
-              请添加选项并开始
-            </div>
-          </template>
-        </div>
+  <body class="h-full bg-gradient-to-br from-blue-50 to-indigo-100">
+    <!-- Loading Screen -->
+    <div id="loading">
+      <div class="text-center text-white">
+        <div class="loading-spinner mx-auto mb-4"></div>
+        <p class="text-lg font-medium">正在加载...</p>
       </div>
     </div>
-
+    
+    <!-- App Container -->
+    <div id="app" class="h-full"></div>
+    
+    <script type="module" src="/src/main.js"></script>
+    
     <script>
-      function lotteryPicker() {
-        return {
-          newOption: "",
-          options: [],
-          result: "",
-          rolling: false,
-          displayOptions: [],
-          itemHeight: 40,
-          slotTween: null,
-
-          handleOptionsChange(newOptions) {
-            this.$nextTick(() => {
-              const items = document.querySelectorAll('.option-item');
-              items.forEach((item, index) => {
-                if (item.classList.contains('option-enter')) {
-                  item.classList.remove('option-enter');
-                }
-              });
-
-              if (newOptions.length > this.options.length - 1) {
-                const lastItem = items[items.length - 1];
-                if (lastItem) {
-                  lastItem.classList.add('option-enter');
-                  setTimeout(() => lastItem.classList.remove('option-enter'), 10);
-                }
-              }
-            });
-          },
-
-          addOption() {
-            const value = this.newOption.trim();
-            if (value) {
-              this.$nextTick(() => {
-                this.options = [...this.options, value];
-                this.newOption = "";
-                this.result = "";
-              });
-            }
-          },
-
-          removeOption(index) {
-            const itemToRemove = document.getElementById('option-' + index);
-            if (itemToRemove) {
-              itemToRemove.classList.add('option-leave');
-              setTimeout(() => {
-                this.options = this.options.filter((_, i) => i !== index);
-                this.result = "";
-              }, 300);
-            }
-          },
-
-          clearOptions() {
-            const items = document.querySelectorAll('.option-item');
-            items.forEach(item => item.classList.add('option-leave'));
-            setTimeout(() => {
-              this.options = [];
-              this.result = "";
-            }, 300);
-          },
-
-          startRolling() {
-            if (this.options.length < 2) {
-              this.result = this.options.length === 1 ? this.options[0] : "请至少添加两个选项！";
-              return;
-            }
-            if (this.rolling) return;
-
-            this.result = "";
-            this.rolling = true;
-
-            if (this.slotTween) {
-              this.slotTween.kill();
-            }
-
-            const baseRepeats = 5;
-            const neededItems = (baseRepeats + 2) * this.options.length;
-            this.displayOptions = [];
-            while (this.displayOptions.length < neededItems) {
-              this.displayOptions.push(...this.options);
-            }
-
-            const bufferItems = this.options.slice(-Math.ceil(this.options.length / 2));
-            this.displayOptions.unshift(...bufferItems);
-            
-            const endBufferItems = this.options.slice(0, Math.ceil(this.options.length / 2));
-            this.displayOptions.push(...endBufferItems);
-
-            const finalOptionIndex = Math.floor(Math.random() * this.options.length);
-            const targetIndex = bufferItems.length + (baseRepeats * this.options.length) + finalOptionIndex;
-            const targetY = -targetIndex * this.itemHeight + (this.itemHeight / 2);
-
-            this.$nextTick(() => {
-              if (!this.$refs.slotContainer) return;
-
-              gsap.set(this.$refs.slotContainer, { y: 0 });
-
-              const tl = gsap.timeline({
-                onComplete: () => {
-                  this.rolling = false;
-                  this.result = this.options[finalOptionIndex];
-                }
-              });
-
-              tl.to(this.$refs.slotContainer, {
-                y: targetY * 0.2,
-                duration: 0.5,
-                ease: "power2.in"
-              })
-              .to(this.$refs.slotContainer, {
-                y: targetY * 0.8,
-                duration: 1.5,
-                ease: "none"
-              })
-              .to(this.$refs.slotContainer, {
-                y: targetY,
-                duration: 1,
-                ease: "power2.out"
-              });
-
-              this.slotTween = tl;
-            });
+      // Hide loading screen once app is loaded
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          const loading = document.getElementById('loading');
+          if (loading) {
+            loading.classList.add('fade-out');
+            setTimeout(() => loading.remove(), 500);
           }
-        };
+        }, 500);
+      });
+      
+      // Service Worker Registration
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => console.log('SW registered'))
+            .catch(error => console.log('SW registration failed'));
+        });
       }
     </script>
   </body>

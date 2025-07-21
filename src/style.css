@@ -1,0 +1,155 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for better mobile experience */
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  
+  body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-500 hover:bg-primary-600 active:bg-primary-700 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
+  }
+  
+  .btn-success {
+    @apply bg-success-500 hover:bg-success-600 active:bg-success-700 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-success-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
+  }
+  
+  .btn-ghost {
+    @apply text-gray-500 hover:text-red-500 active:text-red-600 text-sm transition-colors duration-200 focus:outline-none focus:text-red-500;
+  }
+  
+  .input-field {
+    @apply flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all duration-200 text-base bg-white;
+  }
+  
+  .card {
+    @apply bg-white rounded-2xl shadow-xl backdrop-blur-sm border border-white/20;
+  }
+  
+  .glass-effect {
+    @apply bg-white/90 backdrop-blur-md border border-white/20;
+  }
+}
+
+/* Slot machine styles */
+.slot-machine {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+  height: 3rem;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.slot-window {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(255, 255, 255, 0.9) 15%,
+    rgba(255, 255, 255, 0.8) 30%,
+    rgba(255, 255, 255, 0.8) 70%,
+    rgba(255, 255, 255, 0.9) 85%,
+    rgba(255, 255, 255, 1) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+  border-radius: 0.5rem;
+}
+
+.slot-container {
+  position: absolute;
+  width: 100%;
+  left: 0;
+  top: 0;
+}
+
+.slot-item {
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #d97706;
+  backface-visibility: hidden;
+  text-align: center;
+  padding: 0 1rem;
+}
+
+/* Enhanced mobile interactions */
+.touch-action-none {
+  touch-action: none;
+}
+
+.select-none {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Safe area adjustments for mobile devices */
+@supports (padding: max(0px)) {
+  .safe-area-inset {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Improved focus styles for accessibility */
+.focus-visible {
+  @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+/* Animation improvements */
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.list-enter-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.list-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: absolute;
+  width: 100%;
+}
+
+.list-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
